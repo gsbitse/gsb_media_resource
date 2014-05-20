@@ -1,0 +1,6 @@
+name = GSB Media Resource
+description = @todo.
+dependencies[] = entityreference
+dependencies[] = file_entity
+package = GSB
+core = 7.x
