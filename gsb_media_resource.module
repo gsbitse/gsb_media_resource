@@ -1,0 +1,164 @@
+<?php
+
+/**
+ * @file
+ * @todo.
+ */
+
+/**
+ * Implements hook_menu().
+ */
+function gsb_media_resource_menu() {
+  $items = array();
+  $items['gsb_media_resource/%ctools_js/add/resource/%'] = array(
+    'title' => 'Select resource type',
+    'page callback' => 'gsb_media_resource_add_resource',
+    'page arguments' => array(1, 4),
+    // @todo.
+    'access callback' => TRUE,
+  );
+  $items['gsb_media_resource/%ctools_js/add/resource/%/%'] = array(
+    'page callback' => 'gsb_media_resource_add_resource_type',
+    'page arguments' => array(1, 5, 4),
+    // @todo.
+    'access callback' => TRUE,
+  );
+  return $items;
+}
+
+/**
+ * Modal form for choosing the resource type.
+ *
+ * @param bool $js
+ *
+ * @return array
+ */
+function gsb_media_resource_add_resource($js, $field) {
+  $items = array();
+  // @todo Provide more resource types.
+  $items['image'] = _gsb_media_resource_modal_link(t('Image'), 'gsb_media_resource/nojs/add/resource/' . $field . '/image');
+
+  $output = array(
+    '#theme' => 'item_list',
+    '#items' => $items,
+  );
+
+  $title = t('Select resource type');
+  if (!$js) {
+    return $output;
+  }
+
+  ctools_include('modal');
+  $commands[] = ctools_modal_command_display($title, $output);
+  print ajax_render($commands);
+  exit();
+}
+
+/**
+ * Modal form for adding a resource of a given type.
+ *
+ * @param $js
+ * @param $type
+ *
+ * @return mixed
+ */
+function gsb_media_resource_add_resource_type($js, $type, $field = NULL) {
+  if ($field) {
+    $form_state['storage']['gsb_media_resource_field'] = $field;
+  }
+  $form_state['ajax'] = $js;
+  $form_state['build_info']['args'] = array();
+  $form_state['cache'] = TRUE;
+  form_load_include($form_state, 'pages.inc', 'file_entity');
+  $form_id = 'file_entity_add_upload';
+
+  ctools_include('modal');
+  $output = ctools_modal_form_wrapper($form_id, $form_state);
+  if (!$js) {
+    return $output;
+  }
+
+  $commands = $output;
+  // If a button executes the form but also flags the form to be rebuilt, do not
+  // treat it as an actual form submission, and do not close the modal.
+  if (!empty($form_state['executed']) && !$form_state['rebuild']) {
+    ctools_include('ajax');
+    ctools_add_js('gsb_media_resource', 'gsb_media_resource');
+    $commands = array();
+    // If there are status messages, print them.
+    if ($messages = theme('status_messages')) {
+      $commands[] = ajax_command_html('#console', $messages);
+    }
+    // If a file ID is present, update the textfield.
+    if (isset($form_state['file']->fid)) {
+      $commands[] = array(
+        'command' => 'gsb_media_resource_update_file',
+        'field' => $form_state['storage']['gsb_media_resource_field'],
+        'file_id' => $form_state['file']->fid,
+      );
+    }
+    // Close the modal.
+    $commands[] = ctools_modal_command_dismiss();
+  }
+  print ajax_render($commands);
+  exit();
+}
+
+/**
+ * Implements hook_field_widget_info().
+ */
+function gsb_media_resource_field_widget_info() {
+  return array(
+    'gsb_media_resource_text' => array(
+      'label' => t('Media Resource'),
+      'field types' => array('text'),
+      'settings' => array('size' => 60),
+    ),
+  );
+}
+
+/**
+ * Implements hook_field_widget_form().
+ */
+function gsb_media_resource_field_widget_form(&$form, &$form_state, $field, $instance, $langcode, $items, $delta, $element) {
+  $main_widget = array();
+  switch ($instance['widget']['type']) {
+    case 'gsb_media_resource_text':
+      $field_edit_name = array(
+        'edit',
+        $instance['field_name'],
+        $langcode,
+        $delta,
+        'value',
+      );
+      $field_edit_name = drupal_html_class(implode('-', $field_edit_name));
+      $element['add_link']['#markup'] = _gsb_media_resource_modal_link(t('Add resource'), 'gsb_media_resource/nojs/add/resource/' . $field_edit_name);
+      $main_widget = $element + array(
+        '#type' => 'textfield',
+        '#default_value' => isset($items[$delta]['value']) ? $items[$delta]['value'] : NULL,
+        '#size' => $instance['widget']['settings']['size'],
+        '#maxlength' => $field['settings']['max_length'],
+        '#attributes' => array('class' => array('text-full')),
+      );
+      break;
+  }
+  if ($main_widget) {
+    $element['value'] = $main_widget;
+  }
+  return $element;
+}
+
+/**
+ * Helper function for a modal link.
+ *
+ * @param string $text
+ * @param string $url
+ *
+ * @return string
+ */
+function _gsb_media_resource_modal_link($text, $url) {
+  ctools_include('ajax');
+  ctools_include('modal');
+  ctools_modal_add_js();
+  return ctools_modal_text_button($text, $url, $text);
+}
