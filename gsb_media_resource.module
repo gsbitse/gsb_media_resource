@@ -107,7 +107,7 @@ function gsb_media_resource_add_resource_type($js, $type, $field = NULL) {
       $commands[] = array(
         'command' => 'gsb_media_resource_update_file',
         'field' => $form_state['storage']['gsb_media_resource_field'],
-        'file_id' => $form_state['file']->fid,
+        'file_id' => _gsb_media_resource_build_token($form_state['file'], $form_state['values'], $type),
       );
     }
     // Close the modal.
@@ -115,6 +115,22 @@ function gsb_media_resource_add_resource_type($js, $type, $field = NULL) {
   }
   print ajax_render($commands);
   exit();
+}
+
+/**
+ * Builds a resource token out of a file.
+ *
+ * @param object $file
+ *   The file object.
+ * @param array $values
+ *   Other form values from the upload.
+ * @param string $type
+ *   The resource type.
+ *
+ * @return mixed
+ */
+function _gsb_media_resource_build_token($file, $values, $type) {
+  return $file->fid;
 }
 
 /**
