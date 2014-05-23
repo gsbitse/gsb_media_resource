@@ -163,6 +163,16 @@ function gsb_media_resource_field_widget_form(&$form, &$form_state, $field, $ins
       );
       $field_edit_name = drupal_html_class(implode('-', $field_edit_name));
       $element['add_link']['#markup'] = _gsb_media_resource_modal_link(t('Add resource'), 'gsb_media_resource/nojs/add/resource/' . $field_edit_name);
+      $element['view_mode'] = array(
+        '#type' => 'select',
+        '#options' => array(
+          'half' => '1/2',
+          'third' => '1/3',
+          'full' => 'Full',
+        ),
+        '#title' => t('View mode'),
+        '#default_value' => _gsb_media_resource_derive_view_mode($main_widget['#default_value']),
+      );
       // Textfield specific.
       $main_widget = $element + array(
         '#type' => 'textfield',
@@ -178,6 +188,20 @@ function gsb_media_resource_field_widget_form(&$form, &$form_state, $field, $ins
     $element['value'] = $main_widget;
   }
   return $element;
+}
+
+/**
+ * Parses a token to determine the selected view mode.
+ *
+ * @param string $token
+ */
+function _gsb_media_resource_derive_view_mode($token) {
+  $token = trim($token, '[]');
+  if (strpos($token, ':')) {
+    $token_bits = explode(':', $token);
+    return array_pop($token_bits);
+  }
+  return 'third';
 }
 
 /**
