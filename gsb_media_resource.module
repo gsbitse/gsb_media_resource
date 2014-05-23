@@ -70,10 +70,23 @@ function gsb_media_resource_add_resource_type($js, $type, $field = NULL) {
   $form_state['build_info']['args'] = array();
   $form_state['cache'] = TRUE;
   form_load_include($form_state, 'pages.inc', 'file_entity');
-  $form_id = 'file_entity_add_upload';
+
+  // Provide a mapping from field type to form.
+  $map = array(
+    'image' => array(
+      'form_id' => 'file_entity_add_upload',
+      'options' => array(
+        'file_extensions' => 'png gif jpg jpeg',
+      ),
+    ),
+  );
+  $form_type = $map[$type];
+  $form_type += array('options' => array());
+
+  $form_state['build_info']['args'] = array($form_type['options']);
 
   ctools_include('modal');
-  $output = ctools_modal_form_wrapper($form_id, $form_state);
+  $output = ctools_modal_form_wrapper($form_type['form_id'], $form_state);
   if (!$js) {
     return $output;
   }
